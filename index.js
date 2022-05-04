@@ -10,22 +10,22 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-function verifyJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    res.status(401).send({ message: 'Unauthorized access' });
-  }
-  const token = authHeader?.split(' ')[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      res.status(403).send({ message: 'Access Forbidden' });
-    }
-    console.log('decoded', decoded);
-    req.decoded = decoded;
-  });
+// function verifyJWT(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) {
+//     res.status(401).send({ message: 'Unauthorized access' });
+//   }
+//   const token = authHeader?.split(' ')[1];
+//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+//     if (err) {
+//       res.status(403).send({ message: 'Access Forbidden' });
+//     }
+//     console.log('decoded', decoded);
+//     req.decoded = decoded;
+//   });
 
-  next();
-}
+//   next();
+// }
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.syhej.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -33,30 +33,37 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
   try {
     await client.connect();
-    const userCollection = client.db('wareHouse').collection('user');
+    // const userCollection = client.db('wareHouse').collection('user');
+    const inventoryCollection = client.db('wareHouse').collection('inventoryItem');
     console.log('Connected successfully to server');
 
     // Auth
-    app.post('/login', verifyJWT, async (req, res) => {
-      const user = req.body;
-      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '1d'
-      });
-      res.send({ accessToken });
+    // app.post('/login', verifyJWT, async (req, res) => {
+    //   const user = req.body;
+    //   const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+    //     expiresIn: '1d'
+    //   });
+    //   res.send({ accessToken });
+    // });
+
+    app.get('/inventoryitems', async (req, res) => {
+      const query = {};
+      const cursor = inventoryCollection.find(query);
+      const inventoryItems = await cursor.toArray();
+      res.send(inventoryItems);
     });
 
     app.get('/user', async (req, res) => {
-      // const decodedEmail = req.decoded.email;
-      const email = req.query.email;
-
-      // if (email === decodedEmail) {
-      const query = { email: email };
-      const cursor = userCollection.find(query);
-      const users = await cursor.toArray();
-      res.send(users);
-      // } else {
-      //   res.status(403).send({ message: 'Access Forbidden' });
-      // }
+      // // const decodedEmail = req.decoded.email;
+      // const email = req.query.email;
+      // // if (email === decodedEmail) {
+      // const query = { email: email };
+      // const cursor = userCollection.find(query);
+      // const users = await cursor.toArray();
+      // res.send(users);
+      // // } else {
+      // //   res.status(403).send({ message: 'Access Forbidden' });
+      // // }
     });
   } finally {
     // await client.close();
